@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>墾丁三日遊手冊</title>
+<meta name="description" content="2026 慢活風情 屏東・墾丁三日遊 家族旅遊手冊">
+<meta name="theme-color" content="#FBF6EE">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="墾丁手冊">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FBF6EE; --card:#FFFFFF; --ink:#4A3426; --ink-soft:#7A6253; --line:#EADFCF;
+  --info:#5B7590; --d1:#2A8C8C; --d2:#D9702E; --d3:#9A8420; --hotel:#B5523B;
+  --accent:var(--info);
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --top-h:56px; --tab-h:58px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{font-size:19px;-webkit-text-size-adjust:100%}
+@media (max-width:600px){html{font-size:17.5px}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;
+  -webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+button{font:inherit;color:inherit}
+a{color:inherit}
+
+/* ---------- 頂部列 + 分頁籤（固定） ---------- */
+.chrome{position:sticky;top:0;z-index:20;background:var(--bg);padding-top:env(safe-area-inset-top);
+  box-shadow:0 2px 10px rgba(74,52,38,.08)}
+.topbar{height:var(--top-h);display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:0 max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+.topbar h1{margin:0;font-family:var(--serif);font-size:1.12rem;font-weight:700;letter-spacing:.04em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-btn{flex:none;border:2px solid var(--accent);background:#fff;color:var(--accent);border-radius:999px;
+  padding:6px 16px;font-weight:700;font-size:.95rem;cursor:pointer;min-height:44px}
+.tabbar{display:flex;gap:5px;padding:0 max(10px,env(safe-area-inset-right)) 10px max(10px,env(safe-area-inset-left));
+  overflow-x:auto;scrollbar-width:none}
+.tabbar::-webkit-scrollbar{display:none}
+.tab{flex:1 1 0;min-width:0;min-height:50px;padding:6px 2px;border-radius:14px;border:2px solid var(--line);
+  background:#fff;font-weight:700;font-size:.95rem;cursor:pointer;white-space:nowrap}
+.tab[data-tab="info"]{flex-grow:1.35}
+.tab[aria-selected="true"]{background:var(--c);border-color:var(--c);color:#fff}
+.tab[data-tab="info"]{--c:var(--info)} .tab[data-tab="day1"]{--c:var(--d1)}
+.tab[data-tab="day2"]{--c:var(--d2)} .tab[data-tab="day3"]{--c:var(--d3)} .tab[data-tab="hotel"]{--c:var(--hotel)}
+
+main{max-width:720px;margin:0 auto;padding:18px 16px calc(28px + env(safe-area-inset-bottom))}
+.panel h2{font-family:var(--serif);font-size:1.45rem;margin:.2em 0 .1em;color:var(--accent)}
+.sub{color:var(--ink-soft);margin:0 0 16px}
+
+.card{background:var(--card);border-radius:18px;padding:16px 18px;margin:0 0 14px;
+  box-shadow:0 2px 12px rgba(74,52,38,.07);border:1px solid var(--line)}
+.card h3{margin:0 0 6px;font-size:1.12rem;display:flex;align-items:center;gap:8px}
+.card p{margin:.2em 0}
+.card ul{margin:.2em 0;padding-left:1.2em}
+details.card{padding:0}
+details.card summary{list-style:none;cursor:pointer;padding:16px 18px;font-weight:700;font-size:1.12rem;
+  display:flex;align-items:center;justify-content:space-between;min-height:56px}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary::after{content:"展開 ▾";font-size:.9rem;color:var(--accent);font-weight:700}
+details.card[open] summary::after{content:"收合 ▴"}
+details.card .body{padding:0 18px 16px}
+.emoji{font-size:1.2em}
+.tel{display:inline-block;margin-top:4px;font-weight:700;color:var(--accent);text-decoration:underline;
+  text-underline-offset:3px;padding:4px 0}
+
+/* ---------- 時間軸 ---------- */
+.day-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.timeline{list-style:none;margin:0;padding:0;position:relative}
+.timeline::before{content:"";position:absolute;left:31px;top:8px;bottom:8px;width:3px;border-radius:3px;
+  background:var(--accent);opacity:.25}
+.stop-btn{position:relative;display:flex;align-items:flex-start;gap:14px;width:100%;text-align:left;
+  background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 14px;margin:0 0 12px;
+  box-shadow:0 2px 10px rgba(74,52,38,.06);cursor:pointer}
+.stop-btn:active{transform:scale(.99)}
+.badge{flex:none;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;
+  display:grid;place-items:center;margin-left:-2px;box-shadow:0 0 0 5px var(--bg)}
+.badge svg{width:26px;height:26px}
+.stop-main{flex:1;min-width:0}
+.stop-time{font-size:.95rem;font-weight:700;color:var(--accent)}
+.stop-title{font-size:1.2rem;font-weight:700;line-height:1.4;margin:2px 0}
+.stop-teaser{color:var(--ink-soft);font-size:1rem}
+.chev{flex:none;align-self:center;font-size:1.4rem;color:var(--accent);opacity:.7}
+
+/* ---------- 景點詳情 ---------- */
+.detail-hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px 0 4px}
+.hero-badge{width:112px;height:112px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;
+  box-shadow:0 6px 20px rgba(74,52,38,.18), inset 0 0 0 6px rgba(255,255,255,.25)}
+.hero-badge svg{width:64px;height:64px}
+.progress{margin-top:12px;font-weight:700;color:var(--accent);background:#fff;border:2px solid var(--accent);
+  border-radius:999px;padding:2px 14px;font-size:.95rem}
+.detail-title{font-family:var(--serif);font-size:1.5rem;line-height:1.4;margin:12px 0 2px}
+.detail-time{font-weight:700;color:var(--ink-soft);margin:0 0 6px}
+.detail-text{font-size:1.12rem;line-height:1.78}
+.detail-text p{margin:0 0 .8em}
+.note{background:#FFF8E8;border-left:5px solid var(--accent);border-radius:10px;padding:10px 14px;margin:6px 0 12px}
+.addr{color:var(--ink-soft);margin:4px 0 14px}
+.action{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:16px;
+  font-weight:700;font-size:1.08rem;text-decoration:none;margin:0 0 12px;cursor:pointer;border:2px solid var(--accent)}
+.action.primary{background:var(--accent);color:#fff}
+.action.secondary{background:#fff;color:var(--accent)}
+
+.bottomnav{position:sticky;bottom:0;z-index:15;background:rgba(251,246,238,.97);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  padding:10px max(10px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+.nav-btn{min-height:64px;border-radius:14px;border:2px solid var(--accent);background:#fff;color:var(--accent);
+  font-weight:700;font-size:.98rem;line-height:1.25;cursor:pointer;padding:6px 6px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;overflow:hidden}
+.nav-btn small{font-size:.78rem;font-weight:500;color:var(--ink-soft);display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden;text-align:center}
+.nav-btn.next{background:var(--accent);color:#fff}
+.nav-btn.next small{color:rgba(255,255,255,.9)}
+.nav-btn:disabled{opacity:.35;cursor:default}
+
+.hotel-hero{display:flex;gap:14px;align-items:center}
+.hotel-hero .hero-badge{width:84px;height:84px;flex:none}
+.hotel-hero .hero-badge svg{width:48px;height:48px}
+dl.facts{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px}
+dl.facts dt{font-weight:700;color:var(--accent);white-space:nowrap}
+dl.facts dd{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chip{background:#FFF8E8;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.98rem}
+.source{font-size:.9rem;color:var(--ink-soft)}
+.offline-tip{font-size:.9rem;color:var(--ink-soft);text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+
+<!-- 手繪風圖示 sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-bus" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5" y="5" width="22" height="19" rx="4"/><path d="M5 15h22M9 9h6M17 9h6"/><circle cx="10" cy="20" r="1.4"/><circle cx="22" cy="20" r="1.4"/><path d="M9 24v3M23 24v3"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="12" y="4" width="8" height="14" rx="4"/><path d="M8 15a8 8 0 0 0 16 0M16 23v5M11 28h10"/></symbol>
+    <symbol id="i-food" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 18h24a12 9 0 0 1-24 0z"/><path d="M8 27h16"/><path d="M12 13c0-2 2-2 2-4s-2-2-2-4M18 13c0-2 2-2 2-4s-2-2-2-4"/></symbol>
+    <symbol id="i-fish" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 16c5-7 13-8 19-3l5-4v14l-5-4c-6 5-14 4-19-3z"/><circle cx="10" cy="15" r="1.2"/><path d="M6 27c3-2 6 2 9 0s6 2 9 0"/></symbol>
+    <symbol id="i-house" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 15 16 5l12 10"/><path d="M7 13v14h18V13"/><rect x="13" y="19" width="6" height="8" rx="1"/><path d="M22 6v4"/></symbol>
+    <symbol id="i-market" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 12h24l-2-6H6z"/><path d="M4 12c0 2 2 3 4 3s4-1 4-3c0 2 2 3 4 3s4-1 4-3c0 2 2 3 4 3s4-1 4-3"/><path d="M6 15v12h20V15M13 27v-6h6v6"/><circle cx="24" cy="3.5" r="1"/></symbol>
+    <symbol id="i-lighthouse" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 28l2-17h4l2 17z"/><path d="M11 11h10M13 6h6v5h-6zM16 3v3"/><path d="M5 7l5 2M27 7l-5 2"/><path d="M4 28h24"/></symbol>
+    <symbol id="i-beach" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 6 9 27"/><path d="M5 13c3-6 11-9 19-5-6 0-11 2-19 5z"/><path d="M3 27c4-3 8-3 13-2s9 1 13-1"/><circle cx="25" cy="18" r="2.5"/></symbol>
+    <symbol id="i-sunset" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 20a8 8 0 0 1 16 0"/><path d="M16 5v4M6 10l3 3M26 10l-3 3M3 20h4M25 20h4"/><path d="M4 24c4-2 8 2 12 0s8 2 12 0M8 28c3-1 5 1 8 0s5 1 8 0"/></symbol>
+    <symbol id="i-kart" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="23" r="3.5"/><circle cx="24" cy="23" r="3.5"/><path d="M4 18h6l3-5h7l3 5h5M11.5 23h9"/><path d="M15 13l-1-5h4"/><path d="M26 8l3-1v5"/></symbol>
+    <symbol id="i-door" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 28V5h12v23"/><path d="M4 28h24"/><circle cx="14.5" cy="17" r="1"/><path d="M21 16h7M25 12l3 4-3 4"/></symbol>
+    <symbol id="i-umbrella" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 15C5 8 10 4 16 4s11 4 12 11z"/><path d="M16 4c-3 3-4 7-4 11M16 4c3 3 4 7 4 11M16 4v11"/><path d="M16 15v10a3 3 0 0 0 6 0"/></symbol>
+    <symbol id="i-home" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 15 16 5l12 10"/><path d="M7 13v14h18V13"/><path d="M16 25s-5-3-5-6.5a2.6 2.6 0 0 1 5-1 2.6 2.6 0 0 1 5 1C21 22 16 25 16 25z"/></symbol>
+    <symbol id="i-coffee" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 13h17v7a7 7 0 0 1-7 7h-3a7 7 0 0 1-7-7z"/><path d="M23 15h2a3 3 0 0 1 0 6h-2"/><path d="M11 9c0-2 2-2 2-4M16 9c0-2 2-2 2-4"/><path d="M5 29h19"/></symbol>
+    <symbol id="i-info" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 6h14l6 6v15H6z"/><path d="M20 6v6h6M10 16h12M10 21h12"/></symbol>
+  </defs>
+</svg>
+
+<div class="chrome">
+  <header class="topbar">
+    <h1>慢活風情・墾丁三日遊</h1>
+    <button class="home-btn" id="homeBtn" hidden>⌂ 回目錄</button>
+  </header>
+  <nav class="tabbar" role="tablist" aria-label="手冊分頁">
+    <button class="tab" role="tab" data-tab="info">出發須知</button>
+    <button class="tab" role="tab" data-tab="day1">第一天</button>
+    <button class="tab" role="tab" data-tab="day2">第二天</button>
+    <button class="tab" role="tab" data-tab="day3">第三天</button>
+    <button class="tab" role="tab" data-tab="hotel">民宿</button>
+  </nav>
+</div>
+
+<main id="main">
+  <!-- 出發須知 -->
+  <section class="panel" id="panel-info" data-color="info">
+    <h2>歡迎一起出遊！</h2>
+    <p class="sub">10/30（五）～ 11/1（日）三天兩夜・屏東墾丁</p>
+
+    <div class="card">
+      <h3><span class="emoji">🚌</span>集合時間地點</h3>
+      <p><strong>10/30（五）06:50</strong> 芎林家門口集合</p>
+      <p>06:50～07:00 搭乘豪華氣墊遊覽巴士出發</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="emoji">🎒</span>隨身小提醒</h3>
+      <ul>
+        <li>健保卡、常備藥品</li>
+        <li>防曬用品、隨身水壺</li>
+        <li>一雙好走的鞋</li>
+      </ul>
+      <p>靠近海邊水域時，請互相照看孩子與長輩。</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="emoji">🍲</span>用餐提醒</h3>
+      <p>三天共安排四次合菜（每餐約 500 元／人，酒水另計）。</p>
+      <p>兩晚晚餐可在墾丁大街自理。</p>
+    </div>
+
+    <details class="card">
+      <summary><span><span class="emoji">🛡️</span> 保險</span></summary>
+      <div class="body">
+        <p>每人已投保 250 萬元意外險＋20 萬元醫療險，保障三天行程。</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span><span class="emoji">📞</span> 旅行社聯絡</span></summary>
+      <div class="body">
+        <p>迎賓國際旅行社<br>專案承辦：彭遠志 先生</p>
+        <a class="tel" href="tel:035832888">電話 03-5832888</a><br>
+        <a class="tel" href="tel:0933110684">行動 0933-110684</a>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel" id="panel-day1" data-color="d1" hidden></section>
+  <section class="panel" id="panel-day2" data-color="d2" hidden></section>
+  <section class="panel" id="panel-day3" data-color="d3" hidden></section>
+
+  <!-- 民宿 -->
+  <section class="panel" id="panel-hotel" data-color="hotel" hidden>
+    <div class="hotel-hero">
+      <div class="hero-badge"><svg><use href="#i-house"/></svg></div>
+      <div>
+        <h2>天水月民宿</h2>
+        <p class="sub" style="margin:0">10/30、10/31 連住兩晚・包棟</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>地址與聯絡</h3>
+      <p>屏東縣恆春鎮南灣路 891 號</p>
+      <a class="tel" href="tel:0981227788">訂房專線／LINE 0981-227788</a>
+      <p style="margin-top:8px">位於台 26 線，到恆春古城、南灣海灘、墾丁大街開車約 5～10 分鐘。</p>
+    </div>
+    <a class="action primary" id="hotelMap" target="_blank" rel="noopener">📍 在 Google 地圖開啟</a>
+
+    <div class="card">
+      <h3>入住與退房</h3>
+      <dl class="facts">
+        <dt>入住</dt><dd>約 15:00 後</dd>
+        <dt>退房</dt><dd>約 08:00～11:00</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3>民宿特色</h3>
+      <p>獨棟別墅，客房風格各異，皆有獨立景觀陽台；二樓有交誼空間，戶外有游泳池與兩區休閒亭。</p>
+      <p>房型：二人房、四人房、大四人房（本次包棟）。</p>
+    </div>
+
+    <div class="card">
+      <h3>設施</h3>
+      <div class="chips">
+        <span class="chip">游泳池</span><span class="chip">烤肉區</span><span class="chip">交誼廳卡拉OK</span>
+        <span class="chip">庭園造景</span><span class="chip">免費 Wi-Fi</span><span class="chip">空調</span>
+        <span class="chip">廚房冰箱</span><span class="chip">停車場</span>
+      </div>
+    </div>
+
+    <p class="source">資料來源：Trip.com（評分 9.2/10）與民宿官方網站，交叉比對整理。</p>
+  </section>
+
+  <!-- 景點詳情 -->
+  <section class="panel" id="detail" hidden>
+    <div class="detail-hero">
+      <div class="hero-badge"><svg id="dIcon"><use href="#i-bus"/></svg></div>
+      <div class="progress" id="dProgress"></div>
+    </div>
+    <h2 class="detail-title" id="dTitle"></h2>
+    <p class="detail-time" id="dTime"></p>
+    <div class="detail-text" id="dText"></div>
+    <p class="addr" id="dAddr"></p>
+    <a class="action primary" id="dMap" target="_blank" rel="noopener">📍 在 Google 地圖開啟</a>
+    <button class="action secondary" id="dHotel">🏡 查看住宿詳情</button>
+  </section>
+</main>
+
+<nav class="bottomnav" id="bottomNav" hidden>
+  <button class="nav-btn" id="navBack"></button>
+  <button class="nav-btn" id="navPrev"></button>
+  <button class="nav-btn next" id="navNext"></button>
+</nav>
+
+<script>
+const DAYS = {
+  1:{label:'第一天', date:'10/30（五）', color:'--d1'},
+  2:{label:'第二天', date:'10/31（六）', color:'--d2'},
+  3:{label:'第三天', date:'11/1（日）',  color:'--d3'}
+};
+const TAB_COLOR = {info:'--info', day1:'--d1', day2:'--d2', day3:'--d3', hotel:'--hotel'};
+const HOTEL_ADDR = '屏東縣恆春鎮南灣路891號';
+
+const stops = [
+  // ---------- 第一天 ----------
+  {day:1, time:'06:50–07:00', icon:'bus', title:'芎林家門口集合出發',
+   teaser:'搭乘豪華氣墊遊覽巴士，出發囉！',
+   text:['大家在芎林家門口集合，06:50～07:00 搭乘豪華氣墊遊覽巴士往南出發。','出門前再檢查一次：健保卡、常備藥品、防曬用品、水壺，穿一雙好走的鞋。'],
+   mapQuery:'新竹縣芎林鄉'},
+  {day:1, time:'07:00–11:00', icon:'mic', title:'國道風光．卡拉OK大賽',
+   teaser:'車上欣賞沿途風景，一起歡唱。',
+   text:['沿著國道一路南下，可以看看窗外風景、休息補眠，也可以拿起麥克風來場卡拉OK大賽。','車程較長，中途會停休息站，記得起來走一走、喝點水。']},
+  {day:1, time:'11:30–12:30', icon:'food', title:'午餐．阿達海鮮風味餐',
+   teaser:'第一頓合菜，品嚐在地海鮮。',
+   text:['在阿達海鮮享用海鮮風味合菜（每餐約 500 元／人，酒水另計）。'],
+   note:'吃素的家人請事先告知領隊。', mapQuery:'阿達海鮮 屏東'},
+  {day:1, time:'13:30–17:00', icon:'fish', title:'國立海洋生物博物館',
+   teaser:'走進海底世界，看魚群與珊瑚。',
+   text:['海生館分為「台灣水域館」、「珊瑚王國館」、「世界水域館」三大展館，從台灣的溪流、海岸，一路看到珊瑚礁與世界各大洋的海洋生物。','館內步行距離不短，累了隨時找位子坐下休息。'],
+   mapQuery:'國立海洋生物博物館', address:'屏東縣車城鄉後灣村後灣路2號'},
+  {day:1, time:'17:30–18:00', icon:'house', title:'入住天水月民宿（第一晚）',
+   teaser:'放下行李，入住今明兩晚的家。',
+   text:['抵達天水月民宿辦理入住，這兩晚都住這裡（包棟）。','先把行李放好、稍作休息，再一起出門吃晚餐。'],
+   mapQuery:HOTEL_ADDR, address:HOTEL_ADDR, hotelLink:true},
+  {day:1, time:'18:00–19:30', icon:'market', title:'墾丁大街．自理晚餐',
+   teaser:'逛大街、吃小吃，自由活動。',
+   text:['晚上到墾丁大街自由逛逛，晚餐自理，各式小吃、海產、飲料都有。','人潮較多，請和家人結伴同行，約好集合時間。'],
+   mapQuery:'墾丁大街'},
+
+  // ---------- 第二天 ----------
+  {day:2, time:'07:00–08:30', icon:'coffee', title:'民宿活力早餐',
+   teaser:'吃飽飽，準備出門玩一整天。',
+   text:['在民宿享用早餐，補充一整天的體力。'],
+   note:'今晚還會住同一間民宿，行李不用收。', hotelLink:true},
+  {day:2, time:'09:00–11:00', icon:'lighthouse', title:'鵝鑾鼻公園',
+   teaser:'台灣最南端的白色燈塔。',
+   text:['鵝鑾鼻公園有著名的白色鵝鑾鼻燈塔，位在台灣最南端，園區約 59 公頃。','園區步道平緩，可以慢慢散步、看海、拍照。'],
+   mapQuery:'鵝鑾鼻公園', address:'屏東縣恆春鎮鵝鑾鼻路100號'},
+  {day:2, time:'11:30–12:30', icon:'food', title:'午餐．阿興海鮮風味餐',
+   teaser:'海鮮合菜，休息充電。',
+   text:['在阿興海鮮享用海鮮風味合菜（每餐約 500 元／人，酒水另計）。'],
+   mapQuery:'阿興海鮮 恆春'},
+  {day:2, time:'13:00–16:00', icon:'beach', title:'白沙灣海灘＆水上活動',
+   teaser:'白色沙灘踏浪，玩水消暑。',
+   text:['白沙灣有一大片細白沙灘，可以踏浪、散步、玩沙。','想玩水上活動的人可以請司機幫忙代訂，費用另計。'],
+   note:'下水請注意安全，大人要看好孩子，長輩在岸邊休息就好。', mapQuery:'白沙灣 墾丁'},
+  {day:2, time:'16:30–17:30', icon:'sunset', title:'關山夕照＆高山巖福德宮',
+   teaser:'世界級的夕陽美景。',
+   text:['關山夕照曾被 CNN 評選為世界十二大夕陽之一，從高處望向海面，看太陽慢慢落下。','山上的高山巖福德宮也可以順道參拜。'],
+   mapQuery:'關山夕照 恆春'},
+  {day:2, time:'18:00–19:30', icon:'market', title:'墾丁大街夜遊．夜宿民宿（第二晚）',
+   teaser:'再逛一次大街，晚上回民宿休息。',
+   text:['晚上再到墾丁大街走走，晚餐自理。','逛完回到天水月民宿，第二晚住同一間。'],
+   mapQuery:'墾丁大街', hotelLink:true},
+
+  // ---------- 第三天 ----------
+  {day:3, time:'07:00–09:40', icon:'coffee', title:'民宿活力早餐．準備退房',
+   teaser:'吃完早餐，慢慢整理行李。',
+   text:['在民宿享用早餐，之後回房間整理行李，準備退房。'], hotelLink:true},
+  {day:3, time:'09:40–09:50', icon:'door', title:'民宿 check-out',
+   teaser:'辦理退房，上車出發。',
+   text:['辦理退房，把行李搬上遊覽車。'],
+   note:'離開前再確認一次：行李、手機、充電器、貴重物品都帶了嗎？'},
+  {day:3, time:'10:00–11:00', icon:'kart', title:'墾丁卡丁車賽車場',
+   teaser:'大人小孩都能開的卡丁車。',
+   text:['到卡丁車賽車場體驗駕駛的樂趣，大人與小孩分開跑道，安全又好玩。','不想開車的家人可以在場邊加油、拍照。'],
+   mapQuery:'墾丁 卡丁車賽車場'},
+  {day:3, time:'12:00–13:00', icon:'food', title:'午餐．陳記甕缸雞屏東旗艦店',
+   teaser:'甕缸雞合菜。',
+   text:['在陳記甕缸雞屏東旗艦店享用合菜（每餐約 500 元／人，酒水另計）。'],
+   mapQuery:'陳記甕缸雞 屏東旗艦店'},
+  {day:3, time:'13:30–15:00', icon:'umbrella', title:'六堆客家文化園區',
+   teaser:'認識南台灣客家文化。',
+   text:['六堆客家文化園區佔地約 30 公頃，分為四大區域，可以認識六堆客家的歷史、生活與工藝。','園區寬闊，可以搭配樹蔭慢慢走，累了就找地方坐。'],
+   mapQuery:'六堆客家文化園區', address:'屏東縣內埔鄉建興村信義路588號'},
+  {day:3, time:'15:00–18:00', icon:'bus', title:'回程．國道風光',
+   teaser:'車上看電影，休息站動一動。',
+   text:['搭車北返，車上可以看電影、休息。','停休息站時記得下車活動筋骨、上洗手間。']},
+  {day:3, time:'18:00–19:00', icon:'food', title:'晚餐．范師父客家風味餐',
+   teaser:'旅程最後一餐，客家合菜。',
+   text:['在范師父享用客家風味合菜（每餐約 500 元／人，酒水另計），為這趟旅程畫下句點。'],
+   mapQuery:'范師父客家菜'},
+  {day:3, time:'19:00–20:00', icon:'home', title:'平安返家',
+   teaser:'回到芎林，行程圓滿結束。',
+   text:['回到芎林，行程圓滿結束。','謝謝大家一起出遊，回家好好休息！'],
+   mapQuery:'新竹縣芎林鄉'}
+];
+
+// 分天計算站序
+const dayTotal = {};
+stops.forEach(s => { dayTotal[s.day] = (dayTotal[s.day] || 0) + 1; s.dayIndex = dayTotal[s.day]; });
+
+const $ = id => document.getElementById(id);
+const mapUrl = s => {
+  const q = s.address && s.address !== s.mapQuery ? `${s.mapQuery} ${s.address}` : s.mapQuery;
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+};
+const setAccent = cssVar => document.documentElement.style.setProperty('--accent', `var(${cssVar})`);
+const esc = t => t.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function buildTimeline(){
+  [1,2,3].forEach(d => {
+    const panel = $('panel-day' + d);
+    const items = stops.map((s, i) => ({s, i})).filter(x => x.s.day === d);
+    panel.innerHTML = `
+      <div class="day-head"><h2>${DAYS[d].label}</h2><span class="sub">${DAYS[d].date}・共 ${dayTotal[d]} 站</span></div>
+      <ol class="timeline">${items.map(({s, i}) => `
+        <li><button class="stop-btn" data-stop="${i}" id="stop-item-${i}">
+          <span class="badge"><svg><use href="#i-${s.icon}"/></svg></span>
+          <span class="stop-main">
+            <span class="stop-time">${s.time}</span>
+            <div class="stop-title">${esc(s.title)}</div>
+            <div class="stop-teaser">${esc(s.teaser)}</div>
+          </span>
+          <span class="chev" aria-hidden="true">›</span>
+        </button></li>`).join('')}
+      </ol>`;
+  });
+}
+
+// ---------- 路由：#info / #day1 / #hotel / #stop-0 ----------
+let current = {tab:'info', stop:null};
+function go(hash, replace){
+  if (replace) history.replaceState(null, '', '#' + hash); else history.pushState(null, '', '#' + hash);
+  render();
+}
+function render(){
+  const h = location.hash.slice(1);
+  const m = h.match(/^stop-(\d+)$/);
+  if (m && stops[+m[1]]) return showDetail(+m[1]);
+  showTab(TAB_COLOR[h] ? h : 'info');
+}
+
+function showTab(tab){
+  const fromStop = current.stop;
+  current = {tab, stop:null};
+  setAccent(TAB_COLOR[tab]);
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
+  document.querySelectorAll('.panel').forEach(p => p.hidden = p.id !== 'panel-' + tab);
+  $('homeBtn').hidden = true;
+  $('bottomNav').hidden = true;
+  const item = fromStop !== null && $('stop-item-' + fromStop);
+  if (item && !item.closest('[hidden]')) item.scrollIntoView({block:'center'});
+  else window.scrollTo(0, 0);
+}
+
+function showDetail(i){
+  const s = stops[i], d = DAYS[s.day];
+  current = {tab:'day' + s.day, stop:i};
+  setAccent(d.color);
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === 'day' + s.day));
+  document.querySelectorAll('.panel').forEach(p => p.hidden = p.id !== 'detail');
+
+  $('dIcon').innerHTML = `<use href="#i-${s.icon}"/>`;
+  $('dProgress').textContent = `${d.label} · 第 ${s.dayIndex} / ${dayTotal[s.day]} 站`;
+  $('dTitle').textContent = s.title;
+  $('dTime').textContent = `🕘 ${d.date} ${s.time}`;
+  $('dText').innerHTML = s.text.map(t => `<p>${esc(t)}</p>`).join('') +
+    (s.note ? `<div class="note">💡 ${esc(s.note)}</div>` : '');
+  $('dAddr').hidden = !s.address;
+  $('dAddr').textContent = s.address ? '地址：' + s.address : '';
+  $('dMap').hidden = !s.mapQuery;
+  if (s.mapQuery) $('dMap').href = mapUrl(s);
+  $('dHotel').hidden = !s.hotelLink;
+
+  $('homeBtn').hidden = false;
+  $('bottomNav').hidden = false;
+  $('navBack').innerHTML = `回${d.label}`;
+  const prev = stops[i - 1], next = stops[i + 1];
+  $('navPrev').disabled = !prev;
+  $('navPrev').innerHTML = prev ? `‹ 上一個<small>${esc(prev.title)}</small>` : '‹ 上一個<small>已是第一站</small>';
+  $('navNext').innerHTML = next ? `下一個 ›<small>${esc(next.title)}</small>` : '🏁 完成！<small>回目錄</small>';
+  window.scrollTo(0, 0);
+}
+
+// ---------- 事件 ----------
+document.querySelector('.tabbar').addEventListener('click', e => {
+  const b = e.target.closest('.tab'); if (b) { current.stop = null; go(b.dataset.tab, true); }
+});
+document.querySelector('main').addEventListener('click', e => {
+  const b = e.target.closest('.stop-btn'); if (b) go('stop-' + b.dataset.stop);
+});
+const goHome = () => go(current.tab, true);
+$('homeBtn').onclick = goHome;
+$('navBack').onclick = goHome;
+$('navPrev').onclick = () => current.stop > 0 && go('stop-' + (current.stop - 1), true);
+$('navNext').onclick = () => {
+  const n = current.stop + 1;
+  if (n < stops.length) go('stop-' + n, true); else goHome();
+};
+$('dHotel').onclick = () => { current.stop = null; go('hotel', true); };
+window.addEventListener('popstate', render);
+
+$('hotelMap').href = mapUrl({mapQuery:HOTEL_ADDR, address:HOTEL_ADDR});
+buildTimeline();
+render();
+
+// ---------- 離線支援 ----------
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
