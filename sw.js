@@ -1,5 +1,5 @@
 // 修改任何檔案後，把版本號 +1，手機才會抓到新版
-const VERSION = 'kenting-v5';
+const VERSION = 'kenting-v6';
 const SHELL = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'

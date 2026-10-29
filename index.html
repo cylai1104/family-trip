@@ -422,6 +422,7 @@ dl.facts dd{margin:0}
     <p class="detail-time" id="dTime"></p>
     <div class="detail-text" id="dText"></div>
     <p class="addr" id="dAddr"></p>
+    <p class="addr" id="dPhone" hidden>電話：<a class="tel" id="dTel"></a></p>
     <a class="action primary" id="dMap" target="_blank" rel="noopener">📍 在 Google 地圖開啟</a>
     <button class="action secondary" id="dHotel">🏡 查看住宿詳情</button>
 
@@ -546,7 +547,7 @@ const ROOM_SIZE = {'101':6,'102':4,'103':2,'105':4,'201':6,'202':5,'203':2,'205'
 const HOTEL_ADDR = '屏東縣恆春鎮南灣路891號';
 const ITEM_COLORS = ['#2A8C8C','#D9702E','#6B5BA8','#9A8420','#C9506E','#3F7A55','#5B7590','#8C2F52'];
 
-// 預設行程：Google 試算表「行程」分頁讀不到時才用
+// 行程資料（要改行程就改這裡）
 const DEFAULT_STOPS = [
   // ---------- 第一天 ----------
   {day:1, time:'06:50–07:00', icon:'bus', title:'芎林家門口集合出發',
@@ -556,10 +557,10 @@ const DEFAULT_STOPS = [
   {day:1, time:'07:00–11:00', icon:'mic', title:'國道風光．卡拉OK大賽',
    teaser:'車上欣賞沿途風景，一起歡唱。',
    text:['沿著國道一路南下，可以看看窗外風景、休息補眠，也可以拿起麥克風來場卡拉OK大賽。','車程較長，中途會停休息站，記得起來走一走、喝點水。']},
-  {day:1, time:'11:30–12:30', icon:'food', meal:'lunch', title:'午餐．阿達海鮮風味餐',
-   teaser:'第一頓合菜，品嚐在地海鮮。',
-   text:['在阿達海鮮享用海鮮風味合菜（每餐約 500 元／人，酒水另計）。'],
-   note:'吃素的家人請事先告知領隊。', mapQuery:'阿達海鮮 屏東'},
+  {day:1, time:'11:30–12:30', icon:'food', meal:'lunch', title:'午餐．陳記甕缸雞屏東旗艦店',
+   teaser:'第一頓合菜，甕缸雞。',
+   text:['在陳記甕缸雞屏東旗艦店享用合菜（每餐約 500 元／人，酒水另計）。'],
+   note:'吃素的家人請事先告知領隊。', mapQuery:'陳記甕缸雞 屏東旗艦店'},
   {day:1, time:'13:30–17:00', icon:'fish', title:'國立海洋生物博物館',
    teaser:'走進海底世界，看魚群與珊瑚。',
    text:['海生館分為「台灣水域館」、「珊瑚王國館」、「世界水域館」三大展館，從台灣的溪流、海岸，一路看到珊瑚礁與世界各大洋的海洋生物。','館內步行距離不短，累了隨時找位子坐下休息。'],
@@ -611,10 +612,10 @@ const DEFAULT_STOPS = [
    teaser:'大人小孩都能開的卡丁車。',
    text:['到卡丁車賽車場體驗駕駛的樂趣，大人與小孩分開跑道，安全又好玩。','不想開車的家人可以在場邊加油、拍照。'],
    mapQuery:'墾丁 卡丁車賽車場'},
-  {day:3, time:'12:00–13:00', icon:'food', meal:'lunch', title:'午餐．陳記甕缸雞屏東旗艦店',
-   teaser:'甕缸雞合菜。',
-   text:['在陳記甕缸雞屏東旗艦店享用合菜（每餐約 500 元／人，酒水另計）。'],
-   mapQuery:'陳記甕缸雞 屏東旗艦店'},
+  {day:3, time:'12:00–13:00', icon:'food', meal:'lunch', title:'午餐．阿達海鮮風味餐',
+   teaser:'海鮮合菜，品嚐在地海鮮。',
+   text:['在阿達海鮮享用海鮮風味合菜（每餐約 500 元／人，酒水另計）。'],
+   mapQuery:'阿達海鮮 屏東'},
   {day:3, time:'13:30–15:00', icon:'umbrella', title:'六堆客家文化園區',
    teaser:'認識南台灣客家文化。',
    text:['六堆客家文化園區佔地約 30 公頃，分為四大區域，可以認識六堆客家的歷史、生活與工藝。','園區寬闊，可以搭配樹蔭慢慢走，累了就找地方坐。'],
@@ -622,10 +623,10 @@ const DEFAULT_STOPS = [
   {day:3, time:'15:00–18:00', icon:'bus', title:'回程．國道風光',
    teaser:'車上看電影，休息站動一動。',
    text:['搭車北返，車上可以看電影、休息。','停休息站時記得下車活動筋骨、上洗手間。']},
-  {day:3, time:'18:00–19:00', icon:'food', meal:'dinner', title:'晚餐．范師父客家風味餐',
-   teaser:'旅程最後一餐，客家合菜。',
-   text:['在范師父享用客家風味合菜（每餐約 500 元／人，酒水另計），為這趟旅程畫下句點。'],
-   mapQuery:'范師父客家菜'},
+  {day:3, time:'18:00–19:00', icon:'food', meal:'dinner', title:'晚餐．丹楓餐廳',
+   teaser:'旅程最後一餐，豐盛晚餐。',
+   text:['在丹楓餐廳享用豐盛晚餐，為這趟旅程畫下句點。'],
+   mapQuery:'丹楓餐廳', address:'苗栗縣銅鑼鄉銅鑼村中正路147號', phone:'0910-980-701'},
   {day:3, time:'19:00–20:00', icon:'home', title:'平安返家',
    teaser:'回到芎林，行程圓滿結束。',
    text:['回到芎林，行程圓滿結束。','謝謝大家一起出遊，回家好好休息！'],
@@ -637,29 +638,7 @@ DEFAULT_STOPS.forEach((s, i) => { s.id = 's' + String(i + 1).padStart(2, '0'); s
 
 const DAY_COLORS = ['--d1', '--d2', '--d3'];
 const CN_NUM = ['一','二','三','四','五','六','七','八','九','十'];
-const ICONS = {巴士:'bus', 麥克風:'mic', 卡拉OK:'mic', 餐點:'food', 水族:'fish', 魚:'fish', 民宿:'house', 夜市:'market', 燈塔:'lighthouse',
-  海灘:'beach', 夕陽:'sunset', 卡丁車:'kart', 退房:'door', 門:'door', 客家傘:'umbrella', 傘:'umbrella', 回家:'home', 咖啡:'coffee', 早餐:'coffee'};
-const MEALS = {早餐:'breakfast', 午餐:'lunch', 晚餐:'dinner'};
-const YES = /^(是|有|y|yes|true|1|v|✓|✔)$/i;
 
-// 試算表的一列 → 程式用的一站
-function fromSheet(rows){
-  return rows.map((r, i) => ({
-    id: String(r.id || '').trim() || 'row' + (i + 1),
-    day: parseInt(r.day, 10) || 1,
-    date: String(r.date || '').trim(),
-    time: String(r.time || '').trim(),
-    icon: ICONS[String(r.icon || '').trim()] || String(r.icon || '').trim() || 'bus',
-    meal: MEALS[String(r.meal || '').trim()] || '',
-    title: String(r.title || '').trim(),
-    teaser: String(r.teaser || '').trim(),
-    text: String(r.text || '').split(/\n+/).map(t => t.trim()).filter(Boolean),
-    note: String(r.note || '').trim(),
-    mapQuery: String(r.mapQuery || '').trim(),
-    address: String(r.address || '').trim(),
-    hotelLink: YES.test(String(r.hotelLink || '').trim())
-  })).filter(s => s.title).sort((a, b) => a.day - b.day);
-}
 
 let stops = [], DAYS = {}, dayTotal = {}, TAB_COLOR = {};
 function setStops(list){
@@ -741,7 +720,6 @@ async function sync(){
     if (data.error === 'auth') { session.set('kt.pw', ''); state.sync = 'auth'; syncing = false; renderSync(); refreshAll(); saveToast(); return; }
     if (data.error) throw new Error(data.error);
     state.people = data.people || [];
-    if (Array.isArray(data.stops) && data.stops.length) applyStops(fromSheet(data.stops));
     const server = {};
     (data.expenses || []).forEach(e => { server[e.id] = e; });
     state.pending = state.pending.slice(ops.length);
@@ -754,11 +732,6 @@ async function sync(){
   syncing = false; saveLocal(); refreshAll();
   if (pw && state.pending.length && state.sync === 'ok') return sync();
   saveToast();
-}
-function applyStops(list){
-  if (JSON.stringify(list) === JSON.stringify(store.get('kt.stops', null))) return;
-  store.set('kt.stops', list);
-  setStops(list); buildTabs(); buildTimeline(); render();
 }
 
 // ---------- 存檔後的小回饋 ----------
@@ -1259,6 +1232,8 @@ function showDetail(i){
     (s.note ? `<div class="note">💡 ${esc(s.note)}</div>` : '');
   $('dAddr').hidden = !s.address;
   $('dAddr').textContent = s.address ? '地址：' + s.address : '';
+  $('dPhone').hidden = !s.phone;
+  if (s.phone) { $('dTel').textContent = s.phone; $('dTel').href = 'tel:' + s.phone.replace(/[^0-9+]/g, ''); }
   $('dMap').hidden = !s.mapQuery;
   if (s.mapQuery) $('dMap').href = mapUrl(s);
   $('dHotel').hidden = !s.hotelLink;
@@ -1303,7 +1278,8 @@ window.addEventListener('popstate', () => {
 });
 
 $('hotelMap').href = mapUrl({mapQuery:HOTEL_ADDR, address:HOTEL_ADDR});
-setStops(store.get('kt.stops', null) || DEFAULT_STOPS);
+setStops(DEFAULT_STOPS);
+try { localStorage.removeItem('kt.stops'); } catch {}
 buildTabs();
 buildTimeline();
 render();
