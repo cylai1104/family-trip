@@ -812,6 +812,10 @@ function renderSync(){
 /* ============================================================
    費用計算
    ============================================================ */
+// 分攤金額一律無條件進位到元（扣掉浮點誤差，避免 300.0000001 變 301）
+const ceilYuan = n => Math.ceil(n - 1e-9);
+// 實際向大家收的總額（各組進位後加總），結算用這個才會收付打平
+const expenseCharged = e => Object.values(expenseByRoom(e)).flat().reduce((s, l) => s + l.amount, 0);
 function expenseTotal(e){
   if (e.mode === 'split') return +e.total || 0;
   return (e.items || []).reduce((s, it) => s + (+it.price || 0) * (it.members || []).length, 0);
@@ -825,13 +829,13 @@ function expenseByRoom(e){
     const cnt = {};
     e.members.forEach(n => { const r = unitOf(n); cnt[r] = (cnt[r] || 0) + 1; });
     Object.entries(cnt).forEach(([r, k]) =>
-      push(r, `均分 ${money(e.total)} ÷ ${N} 人 × ${k} 人`, e.total * k / N));
+      push(r, `均分 ${money(e.total)} ÷ ${N} 人，每人 ${money(ceilYuan(e.total / N))} × ${k} 人`, ceilYuan(e.total / N) * k));
   } else {
     (e.items || []).forEach(it => {
       const cnt = {};
       (it.members || []).forEach(n => { const r = unitOf(n); cnt[r] = (cnt[r] || 0) + 1; });
       Object.entries(cnt).forEach(([r, k]) =>
-        push(r, `${it.name || '項目'} ${money(it.price)} × ${k}`, (+it.price || 0) * k));
+        push(r, `${it.name || '項目'} ${money(it.price)} × ${k}`, ceilYuan((+it.price || 0) * k)));
     });
   }
   return out;
@@ -923,8 +927,8 @@ function renderLedger(){
   const paidBy = {};
   list.forEach(e => {
     const pr = unitOf(e.payer);
-    if (pr in paid) paid[pr] += expenseTotal(e);
-    if (e.payer) paidBy[e.payer] = (paidBy[e.payer] || 0) + expenseTotal(e);
+    if (pr in paid) paid[pr] += expenseCharged(e);
+    if (e.payer) paidBy[e.payer] = (paidBy[e.payer] || 0) + expenseCharged(e);
     Object.entries(expenseByRoom(e)).forEach(([r, ls]) => {
       if (!(r in owe)) return;
       lines[r].push({title: e.title || stopName(stopKeyOf(e)), ls});
@@ -932,27 +936,59 @@ function renderLedger(){
     });
   });
 
-  // 付清：欠錢的房，付給先墊錢的人（墊錢的人先抵掉自己房間要付的部分）
+  // 預付款：讀名單的「已收費」，交給「預付給」那個人（沒填就是墊最多錢的人）
+  const topPayer = Object.keys(paidBy).sort((a, b) => paidBy[b] - paidBy[a])[0] || '';
+  const known = n => state.people.some(p => p.name === n);
+  const prepayOut = {}, prepayIn = {}, prepayTo = {};   // 依組：交出去的、代收的、交給誰
+  const prepayerOf = {};                                // 依組：誰交的（退錢時給他）
+  state.people.forEach(p => {
+    const amt = Math.round(+p.prepaid || 0); if (amt <= 0) return;
+    const to = known(p.prepaidTo) ? p.prepaidTo : topPayer; if (!to) return;
+    const k = unitOfPerson(p), kc = unitOf(to);
+    if (!(k in paid) || !(kc in paid) || k === kc) return;   // 交給自己組的人＝錢沒離開這組
+    prepayOut[k] = (prepayOut[k] || 0) + amt;
+    prepayIn[kc] = (prepayIn[kc] || 0) + amt;
+    if (!prepayTo[k]) prepayTo[k] = to;
+    if (!prepayerOf[k] || amt > prepayerOf[k].amt) prepayerOf[k] = {name: p.name, amt};
+    paidBy[p.name] = (paidBy[p.name] || 0) + amt;
+    paidBy[to] = (paidBy[to] || 0) - amt;
+  });
+  const netOf = {};
+  rooms.forEach(r => { const k = r.key;
+    netOf[k] = Math.round(paid[k]) + (prepayOut[k] || 0) - (prepayIn[k] || 0) - Math.round(owe[k]); });
+
+  const payTo = {}, getFrom = {};
+  const transfer = (fromK, toName, amt) => {
+    if (amt <= 0) return;
+    const toK = unitOf(toName);
+    (payTo[fromK] = payTo[fromK] || []).push({name: toName, amt});
+    (getFrom[toK] = getFrom[toK] || []).push({k: fromK, name: toName, amt});
+    netOf[fromK] += amt; netOf[toK] -= amt;
+  };
+  // 有交預付款的組，直接跟收款人退／補
+  rooms.forEach(r => {
+    const k = r.key, to = prepayTo[k];
+    if (!to || unitOf(to) === k || !netOf[k]) return;
+    if (netOf[k] > 0) transfer(unitOf(to), prepayerOf[k].name, netOf[k]);
+    else transfer(k, to, -netOf[k]);
+  });
+
+  // 剩下的：欠錢的組，付給先墊錢的人
   const debt = [], cred = [];
   rooms.forEach(r => {
-    const k = r.key, net = Math.round(paid[k]) - Math.round(owe[k]);
+    const k = r.key, net = netOf[k];
     if (net < 0) { debt.push({k, v: -net}); return; }
-    let left = Math.round(owe[k]);
-    state.people.filter(p => unitOfPerson(p) === k && paidBy[p.name]).sort((a, b) => paidBy[b.name] - paidBy[a.name]).forEach(p => {
-      const use = Math.min(left, Math.round(paidBy[p.name])); left -= use;
-      const v = Math.round(paidBy[p.name]) - use;
+    let left = net;
+    state.people.filter(p => unitOfPerson(p) === k && paidBy[p.name] > 0).sort((a, b) => paidBy[b.name] - paidBy[a.name]).forEach(p => {
+      const v = Math.min(left, Math.round(paidBy[p.name])); left -= v;
       if (v > 0) cred.push({name: p.name, k, v});
     });
   });
   debt.sort((a, b) => b.v - a.v); cred.sort((a, b) => b.v - a.v);
-  const payTo = {}, getFrom = {};
   let i = 0, j = 0;
   while (i < debt.length && j < cred.length) {
     const amt = Math.min(debt[i].v, cred[j].v);
-    if (amt > 0) {
-      (payTo[debt[i].k] = payTo[debt[i].k] || []).push({name: cred[j].name, amt});
-      (getFrom[cred[j].k] = getFrom[cred[j].k] || []).push({k: debt[i].k, name: cred[j].name, amt});
-    }
+    if (amt > 0) transfer(debt[i].k, cred[j].name, amt);
     debt[i].v -= amt; cred[j].v -= amt;
     if (debt[i].v <= 0) i++; if (cred[j].v <= 0) j++;
   }
@@ -960,11 +996,12 @@ function renderLedger(){
   const codeOf = k => (rooms.find(r => r.key === k) || {}).code || k;
 
   $('roomLedger').innerHTML = rooms.filter(r => peopleInUnit(r).length).map(r => {
-    const k = r.key, net = Math.round(paid[k]) - Math.round(owe[k]);
+    const k = r.key;
+    const net = Math.round(paid[k]) + (prepayOut[k] || 0) - (prepayIn[k] || 0) - Math.round(owe[k]);
     const settle = payTo[k]
       ? payTo[k].map(t => `<span class="settle-row pay"><small>付給</small><b>${esc(given(t.name))}</b><span class="num">${money(t.amt)} 元</span></span>`).join('')
       : net > 0 ? `<span class="settle-row get"><small>收回</small><span class="num">${money(net)} 元</span></span>`
-      : `<span class="settle-row none">${owe[k] || paid[k] ? '剛好打平' : '目前沒有費用'}</span>`;
+      : `<span class="settle-row none">${owe[k] || paid[k] || prepayOut[k] ? '剛好打平' : '目前沒有費用'}</span>`;
     const income = getFrom[k] ? `<div class="line-group"><div class="line-title">會收到</div>${getFrom[k].map(g =>
       `<div class="line"><span>${esc(codeOf(g.k))} 付給 ${esc(given(g.name))}</span><span class="num">${money(g.amt)}</span></div>`).join('')}</div>` : '';
     return `<details class="card" data-room="${esc(k)}">
@@ -982,6 +1019,8 @@ function renderLedger(){
         <dl class="totals">
           <dt>應付合計</dt><dd class="num">${money(owe[k])} 元</dd>
           <dt>已先墊付</dt><dd class="num">${money(paid[k])} 元</dd>
+          ${prepayOut[k] ? `<dt>預付款（交給${esc(given(prepayTo[k]))}）</dt><dd class="num">${money(prepayOut[k])} 元</dd>` : ''}
+          ${prepayIn[k] ? `<dt>代收別組預付款</dt><dd class="num">−${money(prepayIn[k])} 元</dd>` : ''}
         </dl>
       </div>
     </details>`;
@@ -1092,7 +1131,7 @@ function renderSum(){
   const d = modal.draft;
   let lines = [];
   if (d.mode === 'split') {
-    if (d.members.length && +d.total) lines = [[`${money(d.total)} ÷ ${d.members.length} 人`, `每人約 ${money(d.total / d.members.length)}`]];
+    if (d.members.length && +d.total) lines = [[`${money(d.total)} ÷ ${d.members.length} 人`, `每人 ${money(ceilYuan(d.total / d.members.length))}`]];
   } else {
     lines = d.items.filter(it => it.members.length || +it.price).map((it, i) =>
       [`${it.name || `項目 ${i + 1}`} ${money(+it.price || 0)} × ${it.members.length}`, money((+it.price || 0) * it.members.length)]);
